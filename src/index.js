@@ -40,6 +40,39 @@ app.get("/users/:id", async (req, res) => {
   }
 });
 
+// User updation endpoint
+app.patch("/users/:id", async (req, res) => {
+  const updates = Object.keys(req.body);
+  const allowedUpdates = ["name", "age", "email", "password"];
+  const isValidOperation = updates.every((update) =>
+    allowedUpdates.includes(update)
+  );
+
+  if (!isValidOperation)
+    return res.status(400).send({ error: "Invalid update" });
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    !updatedUser ? res.status(404).send() : res.send(updatedUser);
+  } catch (e) {
+    e.name === "CastError" ? res.status(404).send() : res.status(500).send();
+    res.status(400).send(e);
+  }
+});
+
+// User Deletion endpoint
+app.delete("/users/:id", async (req, res) => {
+  try {
+    const user = await User.findByIdAndRemove(req.params.id);
+    !user ? res.status(404).send() : res.send(user);
+  } catch (e) {
+    e.name === "CastError" ? res.status(404).send() : res.status(500).send();
+  }
+});
+
 // Task creation endpoint
 app.post("/tasks", async (req, res) => {
   const task = new Task(req.body);
@@ -64,6 +97,38 @@ app.get("/tasks", async (req, res) => {
 app.get("/tasks/:id", async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
+    !task ? res.status(404).send() : res.send(task);
+  } catch (e) {
+    e.name === "CastError" ? res.status(404).send() : res.status(500).send();
+  }
+});
+
+// Task Updation endpoint
+app.patch("/tasks/:id", async (req, res) => {
+  const updates = Object.keys(req.body);
+  const allowedUpdates = ["description", "completed"];
+  const isValidOperation = updates.every((update) =>
+    allowedUpdates.includes(update)
+  );
+
+  if (!isValidOperation)
+    return res.status(400).send({ error: "Invalid update request" });
+
+  try {
+    const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    !updatedTask ? res.status(404).send() : res.send(updatedTask);
+  } catch (e) {
+    e.name === "CastError" ? res.status(404).send() : res.status(500).send();
+  }
+});
+
+// Task Deletion endpoint
+app.delete("/tasks/:id", async (req, res) => {
+  try {
+    const task = await Task.findByIdAndRemove(req.params.id);
     !task ? res.status(404).send() : res.send(task);
   } catch (e) {
     e.name === "CastError" ? res.status(404).send() : res.status(500).send();
