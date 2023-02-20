@@ -4,49 +4,54 @@ const validator = require("validator");
 const jwt = require("jsonwebtoken");
 const Task = require("./task");
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  email: {
-    type: String,
-    unique: true,
-    required: true,
-    lowercase: true,
-    trim: true,
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      unique: true,
+      required: true,
+      lowercase: true,
+      trim: true,
 
-    validate(value) {
-      if (!validator.isEmail(value)) throw new Error("Invalid Email");
-    },
-  },
-  age: {
-    type: Number,
-    default: 0,
-    validate(value) {
-      if (value < 0) throw new Error("Age must be a positive number");
-    },
-  },
-  password: {
-    type: String,
-    required: true,
-    minlength: 7,
-    trim: true,
-    validate(value) {
-      if (value.toLowerCase().includes("password"))
-        throw new Error("Passoword should not contain term `password`.");
-    },
-  },
-  tokens: [
-    {
-      token: {
-        type: String,
-        required: true,
+      validate(value) {
+        if (!validator.isEmail(value)) throw new Error("Invalid Email");
       },
     },
-  ],
-});
+    age: {
+      type: Number,
+      default: 0,
+      validate(value) {
+        if (value < 0) throw new Error("Age must be a positive number");
+      },
+    },
+    password: {
+      type: String,
+      required: true,
+      minlength: 7,
+      trim: true,
+      validate(value) {
+        if (value.toLowerCase().includes("password"))
+          throw new Error("Passoword should not contain term `password`.");
+      },
+    },
+    tokens: [
+      {
+        token: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
+);
 
 // Stores task model objects created by particular user virtually(not in db)
 // And tasks created by this user is available using user.populate('tasks') method
@@ -111,9 +116,9 @@ userSchema.pre("save", async function (next) {
 userSchema.post("remove", async function (next) {
   const user = this;
 
-  await Task.deleteMany({ owner: user._id });
+  await task.deletemany({ owner: user._id });
 });
 
-const User = mongoose.model("User", userSchema);
+const user = mongoose.model("user", userSchema);
 
-module.exports = User;
+module.exports = user;
