@@ -1,8 +1,69 @@
 const express = require("express");
+const multer = require("multer");
+const sharp = require("sharp");
 const User = require("../models/user");
 const auth = require("../middleware/auth");
 
 const router = new express.Router();
+
+// multer to support file upload with express
+const upload = multer({
+  limits: {
+    fileSize: 1000000,
+  },
+  fileFilter(req, file, cb) {
+    if (!file.originalname.match(/\.(jpg|png|jpeg)$/))
+      return cb(new Error("Please upload a image file"));
+
+    cb(undefined, true);
+  },
+});
+
+// Inserting avatar endpoint
+router.post(
+  "/users/me/avatar",
+  auth,
+  upload.single("avatar"),
+  async (req, res) => {
+    const buffer = await sharp(req.file.buffer)
+      .resize({ width: 250, height: 250 })
+      .png()
+      .toBuffer();
+
+    req.user.avatar = buffer;
+    await req.user.save();
+    res.send();
+  },
+  (error, req, res, next) => {
+    res.status(400).send({ error: error.message });
+  }
+);
+
+// Deleting avatar endpoint
+router.delete("/users/me/avatar", auth, async (req, res) => {
+  try {
+    req.user.avatar = undefined;
+
+    await req.user.save();
+    res.send();
+  } catch (e) {
+    res.status(500).send();
+  }
+});
+
+// Fetching avatar endpoint
+router.get("/users/:id/avatar", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user || !user.avatar) throw new Error();
+
+    res.set("Content-Type", "image/png");
+    res.send(user.avatar);
+  } catch (e) {
+    res.status(404).send();
+  }
+});
 
 // User creation endpoint
 router.post("/users", async (req, res) => {
@@ -20,7 +81,6 @@ router.post("/users", async (req, res) => {
 // User login endpoint
 router.post("/users/login", async (req, res) => {
   try {
-    console.log(req.body.email, req.body.password);
     const user = await User.findByCredentials(
       req.body.email,
       req.body.password
